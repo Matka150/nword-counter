@@ -43,7 +43,7 @@ client.on('messageCreate', (message) => {
             }
         });
     } else if (message.mentions.users.first()) {
-        if (message.mentions.users.first().id == client.user.id) return message.reply(`\`>nword {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
+        if (message.mentions.users.first().id == client.user.id) return message.reply(`\`>ncount {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
     }
 
     if (checkNWord(content)) {
