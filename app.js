@@ -42,6 +42,8 @@ client.on('messageCreate', (message) => {
                 message.reply(`<@${user_id}> have used the n-word 0 times`);
             }
         });
+    } else if (message.mentions.users.first()) {
+        if (message.mentions.users.first().id == client.user.id) return message.reply(`\`>nword {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
     }
 
     if (checkNWord(content)) {
