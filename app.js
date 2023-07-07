@@ -30,7 +30,7 @@ function checkNWord(msg) {
 
     const flag = count > 0;
 
-    return [flag, count];
+    return {flag, count};
 }
 
 client.once('ready', (client) => {
@@ -55,10 +55,11 @@ client.on('messageCreate', (message) => {
     } else if (message.mentions.users.first()) {
         if (message.mentions.users.first().id == client.user.id) return message.reply(`\`>ncount {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
     }
+    
+    var {flag, count} = checkNWord(content)
 
-    if (checkNWord(content)[0]) {
+    if (flag) {
         const user_id = message.author.id;
-        var count = checkNWord[1];
 
         db.get(`SELECT * FROM DB WHERE user_id='${user_id}'`, (err, row) => {
             if (row != undefined) {
