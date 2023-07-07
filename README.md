@@ -26,6 +26,6 @@ npm run start
 ```
 
 ### Commands
-`>ncount {user}`<br>
+`/ncount {user}`<br>
 {user} - Optional
 *Mentioning the bot in a message will result to bot with replying with the command*

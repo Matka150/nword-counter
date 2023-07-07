@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { Client, Events, GatewayIntentBits } = require('discord.js');
+const { Client, Events, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Collection } = require('discord.js');
 const sqlite3 = require('sqlite3');
 
 const db = new sqlite3.Database('database');
@@ -11,17 +11,40 @@ db.run('CREATE TABLE IF NOT EXISTS DB (user_id TEXT UNIQUE, count NUMBER)');
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]});
 const token = process.env.TOKEN;
 
+client.commands = new Collection();
+
+const cmd =  {
+    data: new SlashCommandBuilder()
+        .setName('ncount')
+        .setDescription('Sends the amount of times user has used the n-word.')
+        .addUserOption(option =>
+            option.setName('user')
+                .setDescription('User to check n-word usage')
+                .setRequired(false)),
+        async execute(interaction) {
+            const user_id = interaction.options.getUser('user') != null ? interaction.options.getUser('user').id : interaction.user.id;
+
+            await db.get(`SELECT * FROM DB WHERE user_id='${user_id}'`, (err, row) => {
+                if (row != undefined) {
+                    // row.count
+                    interaction.reply(`<@${user_id}> have used the n-word ${row.count} times`);
+                } else {
+                    interaction.reply(`<@${user_id}> have used the n-word 0 times`);
+                }
+            });
+        }
+}
+
+client.commands.set('ncount', cmd);
+
+
+
 const bad_words = ['nigger', 'nigga', 'nigro'];
 
 function checkNWord(msg) {
     var count = 0;
     msg = msg.replace(/ /g, '').toLowerCase();
 
-    // for (let i = 0; i < bad_words.length; i++) {
-    //     if (msg.toLowerCase().includes(bad_words[i]))
-        
-    //     count += (msg.match(/${bad_words[i]}/g) || []).length;
-    // }
 
     bad_words.forEach(word => {
         var re = new RegExp(word, 'g');
@@ -35,25 +58,28 @@ function checkNWord(msg) {
 
 client.once('ready', (client) => {
     console.log(`Logged Into: ${client.user.username}`);
+
+    const clientId = client.application.id;
+
+    const rest = new REST({ version: '10' }).setToken(token);
+
+    (async () => {
+        try {
+            const data = await rest.put(
+                Routes.applicationCommands(clientId),
+                { body: [cmd.data.toJSON()] },
+            );
+        } catch (error) {
+            console.error(error);
+        }
+    })();
 });
 
 client.on('messageCreate', (message) => {
     let content = message.content;
 
-    if (content.toLowerCase().startsWith('>ncount'))
-    {
-        const user_id = message.mentions.users.first() ? message.mentions.users.first().id : message.author.id;
-
-        db.get(`SELECT * FROM DB WHERE user_id='${user_id}'`, (err, row) => {
-            if (row != undefined) {
-                // row.count
-                message.reply(`<@${user_id}> have used the n-word ${row.count} times`);
-            } else {
-                message.reply(`<@${user_id}> have used the n-word 0 times`);
-            }
-        });
-    } else if (message.mentions.users.first()) {
-        if (message.mentions.users.first().id == client.user.id) return message.reply(`\`>ncount {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
+    if (message.mentions.users.first()) {
+        if (message.mentions.users.first().id == client.user.id) return message.reply(`\`/ncount {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
     }
     
     var {flag, count} = checkNWord(content)
@@ -70,6 +96,24 @@ client.on('messageCreate', (message) => {
             }
         });
     }
+});
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = interaction.client.commands.get(interaction.commandName);
+
+	if (!command) {
+		console.error(`No command matching ${interaction.commandName} was found.`);
+		return;
+	}
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+	}
 });
 
 client.login(token);
