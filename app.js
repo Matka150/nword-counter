@@ -14,13 +14,23 @@ const token = process.env.TOKEN;
 const bad_words = ['nigger', 'nigga', 'nigro'];
 
 function checkNWord(msg) {
-    var flag = false;
-    for (let i = 0; i < bad_words.length; i++) {
-        flag = msg.toLowerCase().includes(bad_words[i]);
-        if (flag) break;
-    }
+    var count = 0;
+    msg = msg.replace(/ /g, '').toLowerCase();
 
-    return flag;
+    // for (let i = 0; i < bad_words.length; i++) {
+    //     if (msg.toLowerCase().includes(bad_words[i]))
+        
+    //     count += (msg.match(/${bad_words[i]}/g) || []).length;
+    // }
+
+    bad_words.forEach(word => {
+        var re = new RegExp(word, 'g');
+        count += (msg.match(re) || []).length;
+    });
+
+    const flag = count > 0;
+
+    return [flag, count];
 }
 
 client.once('ready', (client) => {
@@ -46,16 +56,15 @@ client.on('messageCreate', (message) => {
         if (message.mentions.users.first().id == client.user.id) return message.reply(`\`>ncount {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
     }
 
-    if (checkNWord(content)) {
+    if (checkNWord(content)[0]) {
         const user_id = message.author.id;
-        var count;
+        var count = checkNWord[1];
 
         db.get(`SELECT * FROM DB WHERE user_id='${user_id}'`, (err, row) => {
             if (row != undefined) {
-                count = parseInt(row.count) + 1;
+                count = parseInt(row.count) + count;
                 db.run(`UPDATE DB SET count=${count} WHERE user_id='${user_id}'`)
             } else {
-                count = 1;
                 db.run(`INSERT INTO DB (user_id, count) VALUES ('${user_id}', ${count})`)
             }
         });
