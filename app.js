@@ -13,6 +13,10 @@ const token = process.env.TOKEN;
 
 client.commands = new Collection();
 
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 const cmd =  {
     data: new SlashCommandBuilder()
         .setName('ncount')
@@ -27,7 +31,7 @@ const cmd =  {
             await db.get(`SELECT * FROM DB WHERE user_id='${user_id}'`, (err, row) => {
                 if (row != undefined) {
                     // row.count
-                    interaction.reply(`<@${user_id}> have used the n-word ${row.count} times`);
+                    interaction.reply(`<@${user_id}> have used the n-word ${numberWithCommas(row.count)} times`);
                 } else {
                     interaction.reply(`<@${user_id}> have used the n-word 0 times`);
                 }
