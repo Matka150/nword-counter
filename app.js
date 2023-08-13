@@ -82,7 +82,7 @@ client.once('ready', (client) => {
 client.on('messageCreate', (message) => {
     let content = message.content;
 
-    if (message.mentions.users.first() && message.author != message.mentions.users.first()) {
+    if (message.mentions.users.first() && message.author.id != client.user.id) {
         if (message.mentions.users.first().id == client.user.id) return message.reply(`\`/ncount {user}\` - Returns the amount of times a user has used the n-word or any variation of it. ({user} is optional)`);
     }
     
